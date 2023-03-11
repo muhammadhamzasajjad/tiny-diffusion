@@ -227,6 +227,10 @@ if __name__ == "__main__":
     os.makedirs(outdir, exist_ok=True)
     torch.save(model.state_dict(), f"{outdir}/model.pth")
 
+    text_file = open(f"{outdir}/config.txt", "w")
+    text_file.write("config:\n %s" % config)
+    text_file.close()
+
     print("Saving images...")
     imgdir = f"{outdir}/images"
     os.makedirs(imgdir, exist_ok=True)
