@@ -208,12 +208,19 @@ if __name__ == "__main__":
             model.eval()
             sample = torch.randn(config.eval_batch_size, 2)
             timesteps = list(range(len(noise_scheduler)))[::-1]
+            num_images = 10
+            stepsize = int(config.num_timesteps/num_images)
+
+            samples = []
             for i, t in enumerate(tqdm(timesteps)):
                 t = torch.from_numpy(np.repeat(t, config.eval_batch_size)).long()
                 with torch.no_grad():
                     residual = model(sample, t)
                 sample = noise_scheduler.step(residual, t[0], sample)
-            frames.append(sample.numpy())
+                if i % stepsize == 0:
+                    samples.append(sample)
+            np.stack(samples)
+            frames.append(samples)
 
     print("Saving model...")
     outdir = f"exps/{config.experiment_name}"
@@ -226,13 +233,14 @@ if __name__ == "__main__":
     frames = np.stack(frames)
     xmin, xmax = -6, 6
     ymin, ymax = -6, 6
-    for i, frame in enumerate(frames):
-        plt.figure(figsize=(10, 10))
-        plt.scatter(frame[:, 0], frame[:, 1])
-        plt.xlim(xmin, xmax)
-        plt.ylim(ymin, ymax)
-        plt.savefig(f"{imgdir}/{i:04}.png")
-        plt.close()
+    for i, samples in enumerate(frames):
+        for j, frame in enumerate(samples):
+            plt.figure(figsize=(10, 10))
+            plt.scatter(frame[:, 0], frame[:, 1])
+            plt.xlim(xmin, xmax)
+            plt.ylim(ymin, ymax)
+            plt.savefig(f"{imgdir}/{i:04}_{j:03}.png")
+            plt.close()
 
     print("Saving loss as numpy array...")
     np.save(f"{outdir}/loss.npy", np.array(losses))
